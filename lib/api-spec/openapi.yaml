@@ -1,0 +1,1157 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Flatmates Shared Expenses API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: users
+    description: User management
+  - name: groups
+    description: Expense groups
+  - name: expenses
+    description: Expense management
+  - name: settlements
+    description: Debt settlements
+  - name: balances
+    description: Balance calculations
+  - name: import
+    description: CSV import
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # ── Users ──────────────────────────────────────────────────────────────────
+  /users/me:
+    get:
+      operationId: getMe
+      tags: [users]
+      summary: Get or create current user profile
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List all known users
+      responses:
+        "200":
+          description: Users list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+  # ── Groups ─────────────────────────────────────────────────────────────────
+  /groups:
+    get:
+      operationId: listGroups
+      tags: [groups]
+      summary: List groups the current user belongs to
+      responses:
+        "200":
+          description: Groups list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Group"
+    post:
+      operationId: createGroup
+      tags: [groups]
+      summary: Create a new group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GroupInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Group"
+
+  /groups/{groupId}:
+    get:
+      operationId: getGroup
+      tags: [groups]
+      summary: Get group details with current members
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Group detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupDetail"
+    patch:
+      operationId: updateGroup
+      tags: [groups]
+      summary: Update group name
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GroupUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Group"
+    delete:
+      operationId: deleteGroup
+      tags: [groups]
+      summary: Delete a group
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /groups/{groupId}/members:
+    get:
+      operationId: listGroupMembers
+      tags: [groups]
+      summary: List all members (including past) with join/leave dates
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Membership"
+    post:
+      operationId: addGroupMember
+      tags: [groups]
+      summary: Add a member to the group
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MembershipInput"
+      responses:
+        "201":
+          description: Added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Membership"
+
+  /groups/{groupId}/members/{membershipId}:
+    patch:
+      operationId: updateGroupMember
+      tags: [groups]
+      summary: Update membership (set leave date)
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: membershipId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MembershipUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Membership"
+    delete:
+      operationId: removeGroupMember
+      tags: [groups]
+      summary: Remove a membership record
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: membershipId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Removed
+
+  # ── Expenses ───────────────────────────────────────────────────────────────
+  /groups/{groupId}/expenses:
+    get:
+      operationId: listExpenses
+      tags: [expenses]
+      summary: List expenses for a group
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Expenses list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Expense"
+    post:
+      operationId: createExpense
+      tags: [expenses]
+      summary: Create an expense in a group
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExpenseInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Expense"
+
+  /expenses/{expenseId}:
+    get:
+      operationId: getExpense
+      tags: [expenses]
+      summary: Get expense with splits
+      parameters:
+        - name: expenseId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Expense detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenseDetail"
+    patch:
+      operationId: updateExpense
+      tags: [expenses]
+      summary: Update an expense
+      parameters:
+        - name: expenseId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExpenseUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Expense"
+    delete:
+      operationId: deleteExpense
+      tags: [expenses]
+      summary: Delete an expense
+      parameters:
+        - name: expenseId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Settlements ────────────────────────────────────────────────────────────
+  /groups/{groupId}/settlements:
+    get:
+      operationId: listSettlements
+      tags: [settlements]
+      summary: List settlements for a group
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Settlements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Settlement"
+    post:
+      operationId: createSettlement
+      tags: [settlements]
+      summary: Record a settlement payment
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SettlementInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settlement"
+
+  /settlements/{settlementId}:
+    delete:
+      operationId: deleteSettlement
+      tags: [settlements]
+      summary: Delete a settlement
+      parameters:
+        - name: settlementId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Balances ───────────────────────────────────────────────────────────────
+  /groups/{groupId}/balances:
+    get:
+      operationId: getGroupBalances
+      tags: [balances]
+      summary: Get per-member balances (net owed/owes)
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Balances
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BalanceSummary"
+
+  /groups/{groupId}/settlements/suggested:
+    get:
+      operationId: getSuggestedSettlements
+      tags: [balances]
+      summary: Get minimal set of payments to settle all debts
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Suggested settlements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SuggestedSettlement"
+
+  /groups/{groupId}/stats:
+    get:
+      operationId: getGroupStats
+      tags: [balances]
+      summary: Group spending stats and per-member totals
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupStats"
+
+  /groups/{groupId}/activity:
+    get:
+      operationId: getGroupActivity
+      tags: [balances]
+      summary: Recent activity timeline for a group
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Activity feed
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  # ── Exchange Rates ──────────────────────────────────────────────────────────
+  /exchange-rates:
+    get:
+      operationId: listExchangeRates
+      tags: [import]
+      summary: List saved exchange rates
+      responses:
+        "200":
+          description: Rates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExchangeRate"
+    post:
+      operationId: setExchangeRate
+      tags: [import]
+      summary: Set/update an exchange rate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExchangeRateInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExchangeRate"
+
+  # ── CSV Import ─────────────────────────────────────────────────────────────
+  /import/preview:
+    post:
+      operationId: previewImport
+      tags: [import]
+      summary: Parse CSV and return anomalies + preview rows without importing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportFileInput"
+      responses:
+        "200":
+          description: Preview result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportPreview"
+
+  /import/confirm:
+    post:
+      operationId: confirmImport
+      tags: [import]
+      summary: Commit a previewed import (uses session token from preview)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportConfirmInput"
+      responses:
+        "200":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResult"
+
+  /import/sessions:
+    get:
+      operationId: listImportSessions
+      tags: [import]
+      summary: List all past import sessions
+      responses:
+        "200":
+          description: Sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ImportSession"
+
+  /import/sessions/{sessionId}:
+    get:
+      operationId: getImportSession
+      tags: [import]
+      summary: Get import session with full issue log
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Session detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportSessionDetail"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+
+    # ── Users ─────────────────────────────────────────────────────────────────
+    User:
+      type: object
+      required: [id, clerkId, name, email]
+      properties:
+        id:
+          type: integer
+        clerkId:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+
+    # ── Groups ────────────────────────────────────────────────────────────────
+    Group:
+      type: object
+      required: [id, name, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        createdAt:
+          type: string
+
+    GroupDetail:
+      type: object
+      required: [id, name, createdAt, members]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        createdAt:
+          type: string
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/Membership"
+
+    GroupInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        memberNames:
+          type: array
+          items:
+            type: string
+
+    GroupUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+
+    Membership:
+      type: object
+      required: [id, groupId, userId, userName, joinedAt, isActive]
+      properties:
+        id:
+          type: integer
+        groupId:
+          type: integer
+        userId:
+          type: integer
+        userName:
+          type: string
+        userEmail:
+          type: string
+        joinedAt:
+          type: string
+        leftAt:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+
+    MembershipInput:
+      type: object
+      required: [userId, joinedAt]
+      properties:
+        userId:
+          type: integer
+        joinedAt:
+          type: string
+        userName:
+          type: string
+
+    MembershipUpdate:
+      type: object
+      properties:
+        leftAt:
+          type: ["string", "null"]
+        joinedAt:
+          type: string
+
+    # ── Expenses ──────────────────────────────────────────────────────────────
+    Expense:
+      type: object
+      required: [id, groupId, description, amount, currency, amountInr, splitType, date, paidByUserId, paidByName, createdAt]
+      properties:
+        id:
+          type: integer
+        groupId:
+          type: integer
+        description:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+        amountInr:
+          type: number
+        splitType:
+          type: string
+          enum: [equal, percentage, exact, share, settlement]
+        date:
+          type: string
+        paidByUserId:
+          type: integer
+        paidByName:
+          type: string
+        notes:
+          type: ["string", "null"]
+        isSettlement:
+          type: boolean
+        createdAt:
+          type: string
+
+    ExpenseDetail:
+      type: object
+      required: [id, groupId, description, amount, currency, amountInr, splitType, date, paidByUserId, paidByName, createdAt, splits]
+      properties:
+        id:
+          type: integer
+        groupId:
+          type: integer
+        description:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+        amountInr:
+          type: number
+        splitType:
+          type: string
+        date:
+          type: string
+        paidByUserId:
+          type: integer
+        paidByName:
+          type: string
+        notes:
+          type: ["string", "null"]
+        isSettlement:
+          type: boolean
+        createdAt:
+          type: string
+        splits:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExpenseSplit"
+
+    ExpenseInput:
+      type: object
+      required: [description, amount, currency, splitType, date, paidByUserId]
+      properties:
+        description:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+        splitType:
+          type: string
+          enum: [equal, percentage, exact, share, settlement]
+        date:
+          type: string
+        paidByUserId:
+          type: integer
+        notes:
+          type: string
+        isSettlement:
+          type: boolean
+        splits:
+          type: array
+          items:
+            $ref: "#/components/schemas/SplitInput"
+
+    ExpenseUpdate:
+      type: object
+      properties:
+        description:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+        splitType:
+          type: string
+        date:
+          type: string
+        paidByUserId:
+          type: integer
+        notes:
+          type: string
+        splits:
+          type: array
+          items:
+            $ref: "#/components/schemas/SplitInput"
+
+    ExpenseSplit:
+      type: object
+      required: [id, expenseId, userId, userName, amountOwed]
+      properties:
+        id:
+          type: integer
+        expenseId:
+          type: integer
+        userId:
+          type: integer
+        userName:
+          type: string
+        amountOwed:
+          type: number
+        shareCount:
+          type: ["number", "null"]
+        percentage:
+          type: ["number", "null"]
+
+    SplitInput:
+      type: object
+      required: [userId, amountOwed]
+      properties:
+        userId:
+          type: integer
+        amountOwed:
+          type: number
+        shareCount:
+          type: number
+        percentage:
+          type: number
+
+    # ── Settlements ───────────────────────────────────────────────────────────
+    Settlement:
+      type: object
+      required: [id, groupId, fromUserId, fromUserName, toUserId, toUserName, amount, date, createdAt]
+      properties:
+        id:
+          type: integer
+        groupId:
+          type: integer
+        fromUserId:
+          type: integer
+        fromUserName:
+          type: string
+        toUserId:
+          type: integer
+        toUserName:
+          type: string
+        amount:
+          type: number
+        date:
+          type: string
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    SettlementInput:
+      type: object
+      required: [fromUserId, toUserId, amount, date]
+      properties:
+        fromUserId:
+          type: integer
+        toUserId:
+          type: integer
+        amount:
+          type: number
+        date:
+          type: string
+        notes:
+          type: string
+
+    # ── Balances ──────────────────────────────────────────────────────────────
+    MemberBalance:
+      type: object
+      required: [userId, userName, totalPaid, totalOwed, netBalance]
+      properties:
+        userId:
+          type: integer
+        userName:
+          type: string
+        totalPaid:
+          type: number
+        totalOwed:
+          type: number
+        netBalance:
+          type: number
+
+    BalanceSummary:
+      type: object
+      required: [members, totalSpend, currency]
+      properties:
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/MemberBalance"
+        totalSpend:
+          type: number
+        currency:
+          type: string
+
+    SuggestedSettlement:
+      type: object
+      required: [fromUserId, fromUserName, toUserId, toUserName, amount]
+      properties:
+        fromUserId:
+          type: integer
+        fromUserName:
+          type: string
+        toUserId:
+          type: integer
+        toUserName:
+          type: string
+        amount:
+          type: number
+
+    GroupStats:
+      type: object
+      required: [totalSpend, totalSettled, outstandingDebt, expenseCount, memberStats]
+      properties:
+        totalSpend:
+          type: number
+        totalSettled:
+          type: number
+        outstandingDebt:
+          type: number
+        expenseCount:
+          type: integer
+        memberStats:
+          type: array
+          items:
+            $ref: "#/components/schemas/MemberStat"
+
+    MemberStat:
+      type: object
+      required: [userId, userName, totalPaid, shareOwed, netBalance]
+      properties:
+        userId:
+          type: integer
+        userName:
+          type: string
+        totalPaid:
+          type: number
+        shareOwed:
+          type: number
+        netBalance:
+          type: number
+
+    ActivityItem:
+      type: object
+      required: [id, type, description, date, userName, amount]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [expense, settlement, member_joined, member_left]
+        description:
+          type: string
+        date:
+          type: string
+        userName:
+          type: string
+        amount:
+          type: ["number", "null"]
+        currency:
+          type: ["string", "null"]
+
+    # ── Exchange Rates ─────────────────────────────────────────────────────────
+    ExchangeRate:
+      type: object
+      required: [id, fromCurrency, toCurrency, rate, effectiveDate]
+      properties:
+        id:
+          type: integer
+        fromCurrency:
+          type: string
+        toCurrency:
+          type: string
+        rate:
+          type: number
+        effectiveDate:
+          type: string
+
+    ExchangeRateInput:
+      type: object
+      required: [fromCurrency, toCurrency, rate, effectiveDate]
+      properties:
+        fromCurrency:
+          type: string
+        toCurrency:
+          type: string
+        rate:
+          type: number
+        effectiveDate:
+          type: string
+
+    # ── Import ─────────────────────────────────────────────────────────────────
+    ImportFileInput:
+      type: object
+      required: [csvContent, groupId]
+      properties:
+        csvContent:
+          type: string
+          description: Raw CSV file content as a string
+        groupId:
+          type: integer
+
+    ImportIssue:
+      type: object
+      required: [rowNumber, issueType, description, actionTaken, severity]
+      properties:
+        rowNumber:
+          type: integer
+        issueType:
+          type: string
+        description:
+          type: string
+        actionTaken:
+          type: string
+        severity:
+          type: string
+          enum: [error, warning, info]
+        rawRow:
+          type: ["string", "null"]
+
+    ImportPreviewRow:
+      type: object
+      required: [rowNumber, description, amount, currency, paidBy, splitType, date, status]
+      properties:
+        rowNumber:
+          type: integer
+        description:
+          type: string
+        amount:
+          type: ["number", "null"]
+        currency:
+          type: string
+        paidBy:
+          type: string
+        splitType:
+          type: string
+        date:
+          type: string
+        status:
+          type: string
+          enum: [ok, skipped, needs_review]
+        issues:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportIssue"
+
+    ImportPreview:
+      type: object
+      required: [sessionToken, totalRows, validRows, skippedRows, issueCount, issues, rows]
+      properties:
+        sessionToken:
+          type: string
+        totalRows:
+          type: integer
+        validRows:
+          type: integer
+        skippedRows:
+          type: integer
+        issueCount:
+          type: integer
+        issues:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportIssue"
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportPreviewRow"
+
+    ImportConfirmInput:
+      type: object
+      required: [sessionToken, groupId]
+      properties:
+        sessionToken:
+          type: string
+        groupId:
+          type: integer
+
+    ImportResult:
+      type: object
+      required: [sessionId, importedCount, skippedCount, issueCount]
+      properties:
+        sessionId:
+          type: integer
+        importedCount:
+          type: integer
+        skippedCount:
+          type: integer
+        issueCount:
+          type: integer
+
+    ImportSession:
+      type: object
+      required: [id, filename, groupId, importedAt, importedCount, skippedCount, issueCount]
+      properties:
+        id:
+          type: integer
+        filename:
+          type: string
+        groupId:
+          type: integer
+        importedAt:
+          type: string
+        importedCount:
+          type: integer
+        skippedCount:
+          type: integer
+        issueCount:
+          type: integer
+
+    ImportSessionDetail:
+      type: object
+      required: [id, filename, groupId, importedAt, importedCount, skippedCount, issues]
+      properties:
+        id:
+          type: integer
+        filename:
+          type: string
+        groupId:
+          type: integer
+        importedAt:
+          type: string
+        importedCount:
+          type: integer
+        skippedCount:
+          type: integer
+        issues:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportIssue"

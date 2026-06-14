@@ -1,0 +1,44 @@
+date,description,amount,currency,paid_by,split_type,split_details,category
+2026-01-05,Groceries - weekly shop,2400,INR,Aisha,equal,,food
+2026-01-06,Netflix subscription,649,INR,Rohan,equal,,entertainment
+2026-01-07,Electricity bill,3200,INR,Priya,percentage,Aisha:20,Rohan:20,Priya:20,Meera:20,Sam:10,Dev:10,utilities
+2026-01-08,Internet bill,1200,INR,Meera,equal,,utilities
+2026-01-10,Groceries,2100,INR,Sam,equal,,food
+2026-01-12,Dinner out,4500,INR,Dev,share,Aisha:2,Rohan:2,Priya:1,Meera:1,entertainment
+2026-01-14,House cleaning supplies,850,INR,Aisha,equal,,household
+2026-01-15,Groceries - weekly shop,2400,INR,Aisha,equal,,food
+2026-01-16,Gas bill,1800,INR,Rohan,exact,Aisha:300,Rohan:300,Priya:300,Meera:300,Sam:300,Dev:300,utilities
+2026-01-18,Pizza night,1800,INR,Priya,equal,,food
+2026-01-20,Toiletries,960,INR,Meera,equal,,household
+2026-01-22,Groceries,2300,INR,Sam,equal,,food
+2026-01-25,Movie tickets,1200,INR,Dev,share,Aisha:1,Rohan:1,Priya:1,Meera:1,entertainment
+2026-01-28,Water bill,600,INR,Aisha,equal,,utilities
+2026-01-30,Rohan pays Aisha,1500,INR,Rohan,settlement,"from:Rohan,to:Aisha",
+2026-02-01,Groceries - weekly shop,2550,INR,Rohan,equal,,food
+2026-02-03,Streaming services,899,INR,Priya,equal,,entertainment
+2026-02-05,Electricity bill,3100,INR,Meera,percentage,Aisha:20,Rohan:20,Priya:20,Meera:20,Sam:10,Dev:10,utilities
+2026-02-07,Groceries,2200,INR,Sam,equal,,food
+2026-02-09,Takeaway dinner,30.50,USD,Dev,equal,,food
+2026-02-10,Groceries - big shop,2800,INR,Aisha,equal,,food
+2026-02-12,Dinner reservation,5200,INR,Rohan,share,Aisha:2,Rohan:2,Priya:2,Meera:1,Sam:1,Dev:1,entertainment
+2026-02-14,Valentine's dinner (flatmate event),3600,INR,Priya,equal,,food
+2026-02-15,Household supplies,1100,INR,Meera,equal,,household
+2026-02-18,Groceries,2350,INR,Sam,equal,,food
+2026-02-20,Priya pays Sam,2000,INR,Priya,settlement,"from:Priya,to:Sam",
+2026-02-22,Internet bill,1200,INR,Dev,equal,,utilities
+2026-02-25,Groceries - weekly shop,2450,INR,Aisha,equal,,food
+2026-02-27,Cinema outing,1800,INR,Rohan,share,Aisha:1,Rohan:1,Priya:1,entertainment
+2026-13-01,Groceries anomaly 1,1000,INR,Aisha,equal,,food
+,Groceries anomaly 2,1000,INR,Aisha,equal,,food
+2026-03-01,-500,INR,Priya,equal,,food
+2026-03-02,Groceries,0,INR,Sam,equal,,food
+2026-03-03,Electricity bill,95000,INR,Meera,equal,,utilities
+2026-03-04,Groceries,2100,EUR,Dev,equal,,food
+2026-03-05,Internet bill,1200,INR,Batman,equal,,utilities
+2026-03-06,Groceries,2000,INR,Aisha,flying,Aisha:50,Rohan:50,food
+2026-03-07,Dinner out,3000,INR,Rohan,percentage,Aisha:50,Rohan:60,food
+2026-03-08,Movie night,2400,INR,Priya,exact,Aisha:500,Rohan:500,food
+2026-03-09,Groceries - weekly shop,2400,INR,Aisha,equal,,food
+2026-03-09,Groceries - weekly shop,2400,INR,Aisha,equal,,food
+2026-04-01,Settlement with no target,500,INR,Sam,settlement,,
+2026-04-02,Future expense,1000,INR,Dev,equal,,food

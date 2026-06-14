@@ -1,0 +1,18 @@
+Build a complete shared expenses web app for four flatmates (Aisha, Rohan, Priya, Meera, plus Dev and Sam) based on the attached assignment PDF. Follow all requirements exactly. The app must include:
+
+* User login
+* Groups with changing membership over time (people join/leave, balances respect membership dates)
+* Expense creation with all split types from the CSV (equal, percentages, exact amounts, shares, USD/INR conversion)
+* Group balances and individual settlement
+* CSV import that ingests `expenses_export.csv` without editing the file first. The CSV has at least 12 deliberate data problems. Your import process must detect each problem, show it to the user, and handle it according to a documented policy (never crash, never silently guess).
+* A relational database only. Deliverables (produce all of these as files in your final answer):
+* Full working code for the app (ready to run locally and deploy to the web)
+* Public deployment URL (provide instructions to deploy on a free platform like Vercel, Render, or Railway)
+* GitHub repo with meaningful commit history (provide a series of realistic commit messages I can run)
+* `README.md` – setup instructions + which AI tool you are
+* `SCOPE.md` – anomaly log (every data problem found in the CSV, how you handled it) + your database schema
+* `DECISIONS.md` – decision log (significant choices, alternatives, why you chose what you chose)
+* Import report – produced by the app when it ingests the CSV (show a sample or generate it dynamically)
+* `AI_USAGE.md` – AI tools used, key prompts, and three specific cases where AI produced wrong code, how you caught it, and what you fixed You choose the tech stack, architecture, and UI. The app must be fully responsive, professional, and work as a real deployed product. At the end, also provide a bash script that zips all files into `shared-expenses-app.zip` with clear instructions to run and deploy. Deadline mindset: the code must be ready to deploy immediately after you finish.
+
+Note - make a downloadable zip file at the end with instructions on how to run it on my system and make it online
