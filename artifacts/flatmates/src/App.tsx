@@ -1,3 +1,4 @@
+import { setAuthTokenGetter } from "@workspace/api-client-react";
 import { Switch, Route, Redirect, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -98,6 +99,14 @@ function ClerkQueryClientCacheInvalidator() {
 
 function ClerkProviderWithRoutes() {
   const [, setLocation] = useLocation();
+  const clerk = useClerk();
+
+  useEffect(() => {
+    setAuthTokenGetter(async () => {
+      return await clerk.session?.getToken();
+    });
+  }, [clerk]);
+  
 
   if (!clerkPubKey) {
     return <div>Missing VITE_CLERK_PUBLISHABLE_KEY</div>;
