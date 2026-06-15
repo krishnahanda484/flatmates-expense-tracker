@@ -103,7 +103,11 @@ function ClerkAuthSetup() {
 
   useEffect(() => {
     setAuthTokenGetter(async () => {
-      return await clerk.session?.getToken();
+      const token = await clerk.session?.getToken();
+
+      console.log("CLERK TOKEN:", token);
+
+      return token;
     });
 
     return () => {
@@ -132,6 +136,7 @@ function ClerkProviderWithRoutes() {
       routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
     >
       <QueryClientProvider client={queryClient}>
+        <ClerkAuthSetup />
         <ClerkQueryClientCacheInvalidator />
         <Switch>
           <Route path="/" component={HomeRedirect} />
