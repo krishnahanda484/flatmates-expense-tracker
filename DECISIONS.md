@@ -4,20 +4,24 @@ Each entry: the decision, alternatives considered, and why I chose what I chose.
 
 ---
 
-## 1. Tech Stack: Express + better-sqlite3 + React + Vite
+## 1. Tech Stack: Express + PostgreSQL + Drizzle ORM + React
 
-**Options considered:**
-| Option | Pro | Con |
-|--------|-----|-----|
-| Express + SQLite | Zero infra, synchronous API, simple deploy | Not suitable for high concurrency |
-| Express + PostgreSQL | Production-grade, concurrent writes | Requires separate DB server, extra cost |
-| Next.js + Prisma + SQLite | One codebase | Heavier setup, SSR complexity not needed |
-| FastAPI (Python) + SQLite | Good for data scripts | Mixed-language stack, slower iteration |
+### Options considered
 
-**Decision:** Express + SQLite (better-sqlite3) + React.
+| Option | Pros | Cons |
+|----------|----------|----------|
+| SQLite + better-sqlite3 | Simple local setup | Not ideal for cloud deployment and concurrent access |
+| PostgreSQL + Drizzle ORM | Production-ready, relational integrity, cloud-hosted | Slightly more setup complexity |
+| Prisma + PostgreSQL | Strong developer experience | Additional abstraction layer |
+| MongoDB | Flexible schema | Poor fit for transactional expense calculations |
 
-**Why:** This app will have at most 6 concurrent users. SQLite is not a limitation at that scale — it handles hundreds of writes/sec. `better-sqlite3` is synchronous, which means balance calculation code reads like plain logic rather than a chain of `await` calls. Zero infrastructure setup means I can deploy to Railway with a single push and the SQLite file lives on disk. If this ever needed to scale, the migration from SQLite to PostgreSQL is well-documented and the schema is identical.
+### Decision
 
+Express + PostgreSQL + Drizzle ORM + React.
+
+### Why
+
+The application relies heavily on relational data (users, groups, memberships, expenses, settlements, exchange rates). PostgreSQL provides strong transactional guarantees and works well with Neon cloud hosting. Drizzle ORM offers type-safe schema definitions while keeping generated SQL transparent.
 ---
 
 ## 2. Temporal Membership via `joined_at` / `left_at` in `group_memberships`
@@ -145,20 +149,21 @@ The importer applies this consistently for all split types (equal, shares, perce
 
 ---
 
-## 10. USD Exchange Rate: Fixed ₹83.5 (Not a Live API Call)
+## 10. Exchange Rate Management
 
-**Problem:** Trip expenses are in USD. No exchange rate is in the CSV.
+### Options considered
 
-**Options:**
-| Option | Problem |
-|--------|---------|
-| Live FX API call at import time | Rate at import time ≠ rate at expense date; adds external dependency |
-| Ask user to enter rate per import | Extra friction; user may not know |
-| Fixed documented constant | Transparent, auditable, consistent |
+1. Live forex API
+2. User-managed exchange rates
+3. Hardcoded conversion rate
 
-**Decision:** `DEFAULT_USD_INR_RATE = 83.5` (approximate March 2026 USD/INR rate). Documented in `csvImporter.js`, shown in import anomaly log, and noted in every USD row's anomaly description.
+### Decision
 
-**Why 83.5:** Consistent with approximate USD/INR exchange rate for early 2026. The exact rate doesn't matter much for a group of friends — they're splitting costs, not filing taxes.
+User-managed exchange rates stored in PostgreSQL.
+
+### Why
+
+The assignment data spans multiple dates and currencies. A hardcoded rate would be inaccurate, while a live API introduces external dependencies and historical-rate issues. Storing rates with effective dates provides transparency and allows future imports to use the correct rate.
 
 ---
 
