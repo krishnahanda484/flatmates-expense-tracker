@@ -97,16 +97,26 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
-function ClerkProviderWithRoutes() {
-  const [, setLocation] = useLocation();
+
+function ClerkAuthSetup() {
   const clerk = useClerk();
 
   useEffect(() => {
     setAuthTokenGetter(async () => {
       return await clerk.session?.getToken();
     });
+
+    return () => {
+      setAuthTokenGetter(null);
+    };
   }, [clerk]);
-  
+
+  return null;
+}
+
+
+function ClerkProviderWithRoutes() {
+  const [, setLocation] = useLocation();
 
   if (!clerkPubKey) {
     return <div>Missing VITE_CLERK_PUBLISHABLE_KEY</div>;
