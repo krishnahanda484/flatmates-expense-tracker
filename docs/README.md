@@ -6,7 +6,7 @@ A full-stack web application for managing shared household expenses among flatma
 
 ## Live App
 
-Deployed via Replit at `https://<your-domain>.replit.app/`
+Deployed - https://flatmates-expense-tracker-1.onrender.com
 
 ---
 
