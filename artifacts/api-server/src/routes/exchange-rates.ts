@@ -13,46 +13,114 @@ function parseNum(val: unknown): number {
 }
 
 router.get("/exchange-rates", async (req, res): Promise<void> => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) { res.status(401).json({ error: "Unauthorized" }); return; }
+  try {
+    const { userId: clerkId } = getAuth(req);
 
-  const rates = await db.select().from(exchangeRatesTable).orderBy(exchangeRatesTable.effectiveDate);
-  res.json(rates.map(r => ({ ...r, rate: parseNum(r.rate) })));
+    if (!clerkId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const rates = await db
+      .select()
+      .from(exchangeRatesTable)
+      .orderBy(exchangeRatesTable.effectiveDate);
+
+    res.json(
+      rates.map((r) => ({
+        ...r,
+        rate: parseNum(r.rate),
+      }))
+    );
+  } catch (err: any) {
+    console.error("GET EXCHANGE RATES ERROR");
+    console.error(err);
+    console.error(err?.cause);
+
+    res.status(500).json({
+      error: err?.message,
+      cause: err?.cause?.message,
+    });
+  }
 });
 
 router.post("/exchange-rates", async (req, res): Promise<void> => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) { res.status(401).json({ error: "Unauthorized" }); return; }
+  try {
+    const { userId: clerkId } = getAuth(req);
 
-  const parsed = SetExchangeRateBody.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+    if (!clerkId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
 
-  const { fromCurrency, toCurrency, rate, effectiveDate } = parsed.data;
+    const parsed = SetExchangeRateBody.safeParse(req.body);
 
-  // Upsert: update if same currency pair + date exists
-  const existing = await db.select().from(exchangeRatesTable)
-    .where(and(
-      eq(exchangeRatesTable.fromCurrency, fromCurrency),
-      eq(exchangeRatesTable.toCurrency, toCurrency),
-      eq(exchangeRatesTable.effectiveDate, effectiveDate),
-    ))
-    .limit(1);
+    if (!parsed.success) {
+      res.status(400).json({
+        error: parsed.error.message,
+      });
+      return;
+    }
 
-  let result;
-  if (existing[0]) {
-    const [updated] = await db.update(exchangeRatesTable)
-      .set({ rate: rate.toString() })
-      .where(eq(exchangeRatesTable.id, existing[0].id))
-      .returning();
-    result = updated;
-  } else {
-    const [created] = await db.insert(exchangeRatesTable)
-      .values({ fromCurrency, toCurrency, rate: rate.toString(), effectiveDate })
-      .returning();
-    result = created;
+    const {
+      fromCurrency,
+      toCurrency,
+      rate,
+      effectiveDate,
+    } = parsed.data;
+
+    const existing = await db
+      .select()
+      .from(exchangeRatesTable)
+      .where(
+        and(
+          eq(exchangeRatesTable.fromCurrency, fromCurrency),
+          eq(exchangeRatesTable.toCurrency, toCurrency),
+          eq(exchangeRatesTable.effectiveDate, effectiveDate)
+        )
+      )
+      .limit(1);
+
+    let result;
+
+    if (existing[0]) {
+      const [updated] = await db
+        .update(exchangeRatesTable)
+        .set({
+          rate: rate.toString(),
+        })
+        .where(eq(exchangeRatesTable.id, existing[0].id))
+        .returning();
+
+      result = updated;
+    } else {
+      const [created] = await db
+        .insert(exchangeRatesTable)
+        .values({
+          fromCurrency,
+          toCurrency,
+          rate: rate.toString(),
+          effectiveDate,
+        })
+        .returning();
+
+      result = created;
+    }
+
+    res.json({
+      ...result,
+      rate: parseNum(result!.rate),
+    });
+  } catch (err: any) {
+    console.error("POST EXCHANGE RATE ERROR");
+    console.error(err);
+    console.error(err?.cause);
+
+    res.status(500).json({
+      error: err?.message,
+      cause: err?.cause?.message,
+    });
   }
-
-  res.json({ ...result, rate: parseNum(result!.rate) });
 });
 
 export default router;
